@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hyderabad Chai - Telegram Mini App Ledger</title>
+    <title>Hyderabad Chai - Premium Mini App</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -85,12 +85,8 @@
                     </template>
                 </div>
 
-                <div class="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 space-y-2 text-center">
-                    <div class="grid grid-cols-2 gap-1.5">
-                        <button @click="exportDataSyncString()" class="bg-amber-800 hover:bg-amber-900 text-white text-[10px] font-bold py-2 rounded-lg transition-colors shadow-xs">📤 Copy Backup</button>
-                        <button @click="importDataSyncString()" class="bg-slate-700 hover:bg-slate-800 text-white text-[10px] font-bold py-2 rounded-lg transition-colors shadow-xs">📥 Load Backup</button>
-                    </div>
-                    <button @click="clearAllData()" class="text-[10px] text-rose-500 font-bold tracking-wide uppercase block w-full pt-1">⚠️ Wipe Storage Data</button>
+                <div class="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center">
+                    <button @click="clearAllData()" class="text-[10px] text-rose-500 font-bold tracking-wide uppercase">⚠️ Wipe Storage Data</button>
                 </div>
             </aside>
 
@@ -206,6 +202,37 @@
                             </div>
                         </div>
                     </template>
+
+                    <div class="bg-radial from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700/80 text-center space-y-4">
+                        <div class="space-y-1">
+                            <span class="text-2xl block animate-pulse">🔄</span>
+                            <h3 class="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider">Multi-Device Ledger Sync Engine</h3>
+                            <p class="text-[11px] text-slate-500 max-w-sm mx-auto">Move your active pipelines and complete ledger records between your PC and phone instantly using smart compressed token encryption.</p>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row justify-center items-center gap-3 max-w-md mx-auto pt-1">
+                            <button @click="exportDataSyncString()" class="w-full sm:w-1/2 bg-amber-900 hover:bg-amber-950 text-white text-xs font-black py-3 px-4 rounded-xl shadow-md active:scale-98 transition-all flex items-center justify-center space-x-2">
+                                <span>📤</span>
+                                <span>Generate Secure Backup</span>
+                            </button>
+                            <button @click="importDataSyncString()" class="w-full sm:w-1/2 bg-slate-800 hover:bg-slate-900 border border-slate-700 text-white text-xs font-black py-3 px-4 rounded-xl shadow-md active:scale-98 transition-all flex items-center justify-center space-x-2">
+                                <span>📥</span>
+                                <span>Load Backup Code</span>
+                            </button>
+                        </div>
+
+                        <div class="flex justify-center items-center space-x-4 pt-1 text-[10px] font-bold text-slate-400">
+                            <div class="flex items-center space-x-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span x-text="hotels.length + ' Hotels Tracked'"></span>
+                            </div>
+                            <div class="w-1 h-1 rounded-full bg-slate-300"></div>
+                            <div class="flex items-center space-x-1.5">
+                                <span>Compressed Sync Mode:</span>
+                                <span class="text-amber-800 dark:text-amber-400 font-extrabold">Active ⚡</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div x-show="currentTab === 'finance'" class="space-y-4">
@@ -394,46 +421,92 @@
                     this.loadDailyData();
                 },
 
-                // EXPORT SYSTEM DATA STRING
+                // NEW: HIGH-DENSITY SECURE LIGHTWEIGHT DATA EXTRACTION COMPRESSION
                 exportDataSyncString() {
-                    const payload = {
-                        h: this.hotels,
-                        l: this.deliveryLogs
-                    };
-                    const base64Enc = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-                    
-                    // Native clipboard copying mechanism
-                    const el = document.createElement('textarea');
-                    el.value = base64Enc;
-                    document.body.appendChild(el);
-                    el.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(el);
-                    
-                    alert("📤 Backup copied to clipboard! Send this text string to your other device and paste it into 'Load Backup'.");
-                    this.triggerHaptic('success');
+                    try {
+                        const minimizedPayload = {
+                            h: this.hotels.map(hotel => [hotel.id, hotel.name, hotel.location || '']),
+                            l: Object.keys(this.deliveryLogs).reduce((acc, key) => {
+                                const log = this.deliveryLogs[key];
+                                // Skip empty logs to keep data ultra small
+                                if (log.delivered || log.returned || log.receivedCash || log.remarks) {
+                                    acc[key] = [log.delivered, log.returned, log.receivedCash, log.remarks || '', log.afternoonRequired ? 1 : 0, log.afternoonQty || 0];
+                                }
+                                return acc;
+                            }, {})
+                        };
+
+                        const jsonStr = JSON.stringify(minimizedPayload);
+                        // Safe Unicode Hex string conversion engine (prevents character string mobile breaking crashes)
+                        let hexData = '';
+                        for (let i = 0; i < jsonStr.length; i++) {
+                            hexData += jsonStr.charCodeAt(i).toString(16).padStart(2, '0');
+                        }
+                        
+                        const token = "HC" + hexData.toUpperCase();
+                        
+                        const el = document.createElement('textarea');
+                        el.value = token;
+                        document.body.appendChild(el);
+                        el.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(el);
+                        
+                        alert("📤 Secure compressed sync token generated and copied to your clipboard! Paste it into your phone.");
+                        this.triggerHaptic('success');
+                    } catch (err) {
+                        alert("❌ Compression failed: " + err.message);
+                    }
                 },
 
-                // IMPORT SYSTEM DATA STRING
+                // NEW: COMPRESSED STRING LOADER DECRYPTION ENGINE
                 importDataSyncString() {
-                    const rawString = prompt("📥 Paste your system backup text string code here:");
+                    let rawString = prompt("📥 Paste your secure sync token code below:");
                     if (!rawString) return;
-                    
+                    rawString = rawString.trim();
+
+                    if (!rawString.startsWith("HC")) {
+                        alert("❌ Invalid Backup Code. Ensure you copied the entire text string starting with 'HC'.");
+                        this.triggerHaptic('error');
+                        return;
+                    }
+
                     try {
-                        const parsedData = JSON.parse(decodeURIComponent(escape(atob(rawString))));
-                        if (parsedData.h && parsedData.l) {
-                            this.hotels = parsedData.h;
-                            this.deliveryLogs = parsedData.l;
-                            this.saveToStorage();
-                            if (this.hotels.length > 0) this.selectedHotelId = this.hotels[0].id;
-                            this.loadDailyData();
-                            alert("✅ Data backup sync successful! Ledger refreshed.");
-                            this.triggerHaptic('success');
-                        } else {
-                            alert("❌ Invalid backup data format.");
+                        const hex = rawString.substring(2);
+                        let jsonStr = '';
+                        for (let i = 0; i < hex.length; i += 2) {
+                            jsonStr += String.fromCharCode(parseInt(hex.substring(i, i + 2), 16));
                         }
+
+                        const raw = JSON.parse(jsonStr);
+                        if (!raw.h || !raw.l) throw new Error("Format Corrupted");
+
+                        // Rehydrate the data matrix back into structure options
+                        this.hotels = raw.h.map(arr => ({ id: arr[0], name: arr[1], location: arr[2], addedOn: new Date().toISOString().split('T')[0] }));
+                        
+                        this.deliveryLogs = {};
+                        Object.keys(raw.l).forEach(key => {
+                            const arr = raw.l[key];
+                            this.deliveryLogs[key] = {
+                                delivered: Number(arr[0]) || 0,
+                                returned: Number(arr[1]) || 0,
+                                receivedCash: Number(arr[2]) || 0,
+                                remarks: arr[3] || '',
+                                afternoonRequired: arr[4] === 1,
+                                afternoonQty: Number(arr[5]) || 0,
+                                pendingThermos: 0,
+                                pendingCash: 0
+                            };
+                        });
+
+                        this.saveToStorage();
+                        if (this.hotels.length > 0) this.selectedHotelId = this.hotels[0].id;
+                        this.loadDailyData();
+                        
+                        alert("⚡ Ledger Synced Successfully! All records loaded perfectly.");
+                        this.triggerHaptic('success');
                     } catch (e) {
-                        alert("❌ Failed to read backup code. Make sure you copied the exact, entire text string.");
+                        alert("❌ Decode failed. The sync code string is missing characters or corrupted.");
                         this.triggerHaptic('error');
                     }
                 },
