@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hyderabad Chai - Premium Cloud Ledger</title>
     
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap" rel="stylesheet">
@@ -33,7 +34,7 @@
         <header class="bg-gradient-to-r from-amber-950 to-amber-900 text-white shadow-md sticky top-0 z-40 px-4 py-3.5 border-b border-amber-900/40">
             <div class="max-w-7xl mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-3">
-                    <button @click="isSidebarOpen = true" class="p-2 -ml-2 bg-amber-900/60 rounded-xl hover:bg-amber-800/80 transition-all">
+                    <button @click="isSidebarOpen = true" class="p-2 -ml-2 bg-amber-900/60 rounded-xl hover:bg-amber-800/80 transition-all md:hidden">
                         <span class="text-lg block">📋</span>
                     </button>
                     <div>
@@ -54,7 +55,7 @@
 
                     <div :class="cloudConnected ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300' : 'bg-rose-500/20 border-rose-500/40 text-rose-300'" class="px-2.5 py-1.5 rounded-xl text-[9px] font-black tracking-wider uppercase border flex items-center space-x-1.5 transition-all">
                         <span class="w-2 h-2 rounded-full" :class="cloudConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'"></span>
-                        <span x-text="cloudConnected ? 'Live Sync' : 'Offline'"></span>
+                        <span x-text="cloudConnected ? 'Synced' : 'Offline'"></span>
                     </div>
                 </div>
             </div>
@@ -93,7 +94,7 @@
                 </div>
 
                 <div class="p-3 border-t border-slate-100 bg-slate-50 text-center">
-                    <button @click="clearConfiguration()" class="text-[10px] text-rose-500 font-bold tracking-wide uppercase">⚠️ Reset API Database Setup Key</button>
+                    <button @click="clearConfiguration()" class="text-[10px] text-rose-500 font-bold tracking-wide uppercase hover:underline">⚠️ Disconnect Database Key</button>
                 </div>
             </aside>
 
@@ -102,13 +103,13 @@
             <main class="flex-1 p-4 overflow-x-hidden min-h-0">
                 
                 <div x-show="!isDatabaseConfigured()" class="bg-white border border-slate-200 rounded-2xl p-6 text-center space-y-4 max-w-md mx-auto my-10 shadow-xl">
-                    <span class="text-4xl block">⚡</span>
-                    <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Cloud Setup Engine Portal</h2>
-                    <p class="text-xs text-slate-500 leading-relaxed">Paste your API keys below once. Your phone and laptop ledger calculations will auto-synchronize without keys ever again.</p>
+                    <span class="text-4xl block">🛰️</span>
+                    <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Cloud Sync Configuration</h2>
+                    <p class="text-xs text-slate-500 leading-relaxed">Paste your credentials here one time. Your phones and computers will automatically stay updated simultaneously.</p>
                     
                     <div class="space-y-3 text-left">
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Supabase API Endpoint Project URL</label>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Supabase API Project URL</label>
                             <input type="text" x-model="configUrl" placeholder="https://your-project.supabase.co" class="w-full text-xs font-semibold p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-amber-900 transition-colors">
                         </div>
                         <div>
@@ -117,8 +118,10 @@
                         </div>
                     </div>
 
+                    <div x-show="dbErrorMessage" class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-[11px] font-semibold text-left" x-text="dbErrorMessage" x-cloak></div>
+
                     <button @click="saveDatabaseConfiguration()" class="w-full bg-amber-900 hover:bg-amber-950 text-white font-black text-xs py-3.5 rounded-xl shadow-md transition-all active:scale-98">
-                        Connect Setup Engine Pool
+                        Establish Secured Sync Pool
                     </button>
                 </div>
 
@@ -135,7 +138,7 @@
                                 </div>
                             </div>
                             <button @click="forceCloudFetch()" class="bg-amber-50 hover:bg-amber-100 text-amber-900 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-100 transition-colors flex items-center space-x-1">
-                                <span>🔄</span> <span>Sync Now</span>
+                                <span>🔄</span> <span>Force Refresh</span>
                             </button>
                         </div>
 
@@ -145,28 +148,28 @@
                                 <div class="p-4 bg-gradient-to-r from-amber-950 to-amber-900 text-white flex justify-between items-center">
                                     <div>
                                         <h3 class="font-extrabold text-sm tracking-wide" x-text="getSelectedHotel().name"></h3>
-                                        <p class="text-[10px] text-amber-300 font-semibold">Standard Wholesale Rate: 25 SAR / Pot</p>
+                                        <p class="text-[10px] text-amber-300 font-semibold">Wholesale Logistics Rate: 25 SAR / Pot</p>
                                     </div>
                                     <button @click="removeHotel(selectedHotelId)" class="text-amber-200 hover:text-rose-300 text-[10px] font-bold bg-amber-900/50 px-2.5 py-1.5 rounded-lg transition-colors">
-                                        Remove Pipeline
+                                        Delete Client
                                     </button>
                                 </div>
 
                                 <div class="border-b border-slate-100 bg-slate-50/50" x-data="{ expanded: false }">
                                     <button @click="expanded = !expanded" class="w-full px-4 py-2.5 flex items-center justify-between font-bold text-[11px] text-slate-500 tracking-wider uppercase hover:bg-slate-100 transition-colors">
                                         <div class="flex items-center space-x-2">
-                                            <span>📍 Logistics Routing Address</span>
+                                            <span>📍 Route Map Coordinates</span>
                                             <span x-show="getSelectedHotel().location" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                         </div>
-                                        <span x-text="expanded ? 'Hide ▲' : 'Expand Panel ▼'"></span>
+                                        <span x-text="expanded ? 'Hide ▲' : 'Open Address Panel ▼'"></span>
                                     </button>
                                     
                                     <div x-show="expanded" x-transition class="p-4 pt-0 space-y-2">
-                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Google Maps Coordinate URL Navigation Marker</label>
-                                        <textarea x-model="getSelectedHotel().location" @change="saveToStorageAndCloud()" rows="2" placeholder="Paste structural maps URL marker navigation addresses here" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-bold text-xs text-slate-800 focus:outline-none focus:border-amber-900 transition-colors resize-none"></textarea>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Google Maps Marker Navigation Reference Link</label>
+                                        <textarea x-model="getSelectedHotel().location" @change="saveToStorageAndCloud()" rows="2" placeholder="Paste full share web URL address locator references here..." class="w-full bg-white border border-slate-200 rounded-xl p-2.5 font-bold text-xs text-slate-800 focus:outline-none focus:border-amber-900 transition-colors resize-none"></textarea>
                                         
                                         <button x-show="getSelectedHotel().location" @click="launchGoogleMaps(getSelectedHotel().location)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs p-2.5 rounded-xl transition-colors flex items-center justify-center space-x-2 shadow-xs">
-                                            <span>🗺️ Launch Maps Link Navigation</span>
+                                            <span>🗺️ Open Link in Google Maps App</span>
                                         </button>
                                     </div>
                                 </div>
@@ -178,14 +181,14 @@
                                             <input type="number" min="0" x-model.number="getLog(selectedHotelId).delivered" @input="calculateAndSave(selectedHotelId)" class="w-full bg-white border border-slate-200 rounded-lg p-2 font-black text-sm text-slate-800 focus:outline-none focus:border-amber-900 transition-colors">
                                         </div>
                                         <div>
-                                            <label class="block text-[10px] font-bold text-amber-950 mb-1">Delivered Cost Value</label>
+                                            <label class="block text-[10px] font-bold text-amber-950 mb-1">Gross Due Cost</label>
                                             <div class="p-2 font-black text-sm text-slate-800 bg-white border border-slate-100 rounded-lg mt-0.5" x-text="((getLog(selectedHotelId).delivered || 0) * 25) + ' SAR'"></div>
                                         </div>
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Returned Empty Today</label>
+                                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Returned Empty Pots</label>
                                             <input type="number" min="0" x-model.number="getLog(selectedHotelId).returned" @input="calculateAndSave(selectedHotelId)" class="w-full bg-white border border-slate-200 rounded-lg p-2 font-black text-sm text-slate-800 focus:outline-none">
                                         </div>
                                         <div>
@@ -197,22 +200,22 @@
                                     <div class="p-3 bg-slate-50 rounded-xl space-y-2 border border-slate-100">
                                         <label class="flex items-center space-x-2 font-bold text-slate-700 cursor-pointer">
                                             <input type="checkbox" x-model="getLog(selectedHotelId).afternoonRequired" @change="saveToStorageAndCloud()" class="rounded text-amber-800 focus:ring-amber-700 w-4 h-4">
-                                            <span>PM Delivery Required</span>
+                                            <span>PM Dispatch Required</span>
                                         </label>
                                         <div x-show="getLog(selectedHotelId).afternoonRequired" x-transition>
-                                            <label class="block text-[10px] font-bold text-slate-400 mb-1">Target Quantity (PM)</label>
+                                            <label class="block text-[10px] font-bold text-slate-400 mb-1">Target Quantity Target (PM)</label>
                                             <input type="number" min="0" x-model.number="getLog(selectedHotelId).afternoonQty" @input="saveToStorageAndCloud()" class="w-full bg-white border border-slate-200 rounded-lg p-2 font-bold text-slate-800 focus:outline-none">
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Pipeline Operational Status Remarks</label>
+                                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Operational State Exceptions Remarks</label>
                                         <select x-model="getLog(selectedHotelId).remarks" @change="saveToStorageAndCloud()" class="w-full bg-white border border-slate-200 rounded-lg p-2 font-semibold text-slate-700 focus:outline-none">
-                                            <option value="">Standard Operations</option>
-                                            <option value="Holiday">Holiday (Closed)</option>
-                                            <option value="No Longer Needed">No Longer Needed</option>
-                                            <option value="Not Needed">Not Needed Today</option>
-                                            <option value="Required Afternoon">Urgent PM Needed</option>
+                                            <option value="">Normal Dispatch Schedule</option>
+                                            <option value="Holiday">Closed (Holiday Setup)</option>
+                                            <option value="No Longer Needed">Service Deactivated / Paused</option>
+                                            <option value="Not Needed">Not Required Today</option>
+                                            <option value="Required Afternoon">Urgent PM Dispatch Target</option>
                                         </select>
                                     </div>
 
@@ -223,7 +226,7 @@
                                                 <input type="number" min="0" x-model.number="getLog(selectedHotelId).receivedCash" @input="calculateAndSave(selectedHotelId)" @click.stop class="w-full bg-white border border-slate-200 rounded-lg p-2 font-black text-slate-800 focus:outline-none" placeholder="SAR">
                                             </div>
                                             <div>
-                                                <label class="block text-[10px] font-bold text-emerald-950 mb-1">Total Accrued Due Balance</label>
+                                                <label class="block text-[10px] font-bold text-emerald-950 mb-1">Total Outstanding Debt Due</label>
                                                 <div class="p-2 font-black text-sm bg-white border border-transparent rounded-lg mt-0.5" :class="getLog(selectedHotelId).pendingCash > 0 ? 'text-rose-600' : 'text-emerald-800'" x-text="getLog(selectedHotelId).pendingCash + ' SAR'"></div>
                                             </div>
                                         </div>
@@ -234,24 +237,30 @@
                                 </div>
                             </div>
                         </template>
+
+                        <template x-if="hotels.length === 0">
+                            <div class="text-center p-8 bg-white border rounded-2xl text-slate-400 font-medium text-xs">
+                                No hotel dispatch networks onboarded. Use the sidebar to track a company path.
+                            </div>
+                        </template>
                     </div>
 
                     <div x-show="currentTab === 'finance'" class="space-y-4">
                         <div class="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 space-y-3">
-                            <h2 class="font-extrabold text-sm text-slate-800">Advanced Analytics Dashboard Engine</h2>
+                            <h2 class="font-extrabold text-sm text-slate-800">Advanced Income Metrics Summary</h2>
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                                 <div>
-                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Scope Filter Engine Target</label>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Analytical Filter Scope</label>
                                     <select x-model="financeHotelFilter" @change="refreshFinanceMetrics()" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl font-bold text-slate-700 focus:outline-none">
-                                        <option value="all">Global Pipeline Ledger Summary</option>
+                                        <option value="all">Global Network Aggregation Overview</option>
                                         <template x-for="hotel in hotels" :key="hotel.id">
                                             <option :value="hotel.id" x-text="hotel.name"></option>
                                         </template>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Time Horizon Range View</label>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Time Range Horizon Scope</label>
                                     <div class="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl font-bold text-center text-slate-600">
                                         <div @click="financePeriod = 'day'; refreshFinanceMetrics();" :class="financePeriod === 'day' ? 'bg-white text-slate-900 shadow-xs font-black' : 'cursor-pointer hover:text-slate-900'" class="p-2 rounded-lg text-[10px] transition-all">Day</div>
                                         <div @click="financePeriod = 'week'; refreshFinanceMetrics();" :class="financePeriod === 'week' ? 'bg-white text-slate-900 shadow-xs font-black' : 'cursor-pointer hover:text-slate-900'" class="p-2 rounded-lg text-[10px] transition-all">Week</div>
@@ -264,7 +273,7 @@
 
                         <div class="grid grid-cols-3 gap-2 text-center text-xs font-bold">
                             <div class="bg-white border border-slate-200 p-3 rounded-xl shadow-xs">
-                                <span class="text-[9px] block text-slate-400 uppercase tracking-wider">Gross Earned</span>
+                                <span class="text-[9px] block text-slate-400 uppercase tracking-wider">Gross Revenue</span>
                                 <span class="text-xs font-black text-amber-900 block mt-0.5" x-text="financeGrossEarned + ' SAR'"></span>
                             </div>
                             <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-xl shadow-xs">
@@ -272,7 +281,7 @@
                                 <span class="text-xs font-black text-emerald-700 block mt-0.5" x-text="financeCollected + ' SAR'"></span>
                             </div>
                             <div class="bg-rose-50 border border-rose-100 p-3 rounded-xl shadow-xs">
-                                <span class="text-[9px] block text-rose-800 uppercase tracking-wider">Pending</span>
+                                <span class="text-[9px] block text-rose-800 uppercase tracking-wider">Arrears Due</span>
                                 <span class="text-xs font-black text-rose-600 block mt-0.5" x-text="financePending + ' SAR'"></span>
                             </div>
                         </div>
@@ -296,7 +305,7 @@
                         <h3 class="text-sm font-black tracking-wide" x-text="selectedHotelForLedger ? selectedHotelForLedger.name : ''"></h3>
                         <p class="text-[10px] text-amber-300 font-bold uppercase tracking-wider">Statement Audit History Logs</p>
                     </div>
-                    <button @click="showLedgerModal = false" class="text-amber-200 text-2xl font-bold p-1 line-none">×</button>
+                    <button @click="showLedgerModal = false" class="text-amber-200 text-2xl font-bold p-1">&times;</button>
                 </div>
 
                 <div class="p-3 overflow-y-auto flex-1 bg-slate-50 space-y-3 custom-scrollbar">
@@ -322,17 +331,17 @@
                             <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-500 font-medium">
                                 <div class="flex justify-between"><span>Delivered Pots:</span> <strong class="text-slate-800" x-text="entry.delivered"></strong></div>
                                 <div class="flex justify-between"><span>Returned Empty:</span> <strong class="text-slate-800" x-text="entry.returned"></strong></div>
-                                <div class="flex justify-between text-rose-600"><span>Missing Thermos:</span> <span class="font-bold" x-text="entry.pendingThermos"></span></div>
-                                <div class="flex justify-between"><span>Gross Cost:</span> <strong class="text-slate-800" x-text="(entry.delivered * 25) + ' SAR'"></strong></div>
-                                <div class="flex justify-between text-emerald-600"><span>Paid Value:</span> <span class="font-bold" x-text="entry.receivedCash + ' SAR'"></span></div>
-                                <div class="flex justify-between text-rose-600 font-black"><span>Pending Balance:</span> <span x-text="entry.pendingCash + ' SAR'"></span></div>
+                                <div class="flex justify-between text-rose-600"><span>Lost Thermos:</span> <span class="font-bold" x-text="entry.pendingThermos"></span></div>
+                                <div class="flex justify-between"><span>Gross Billing:</span> <strong class="text-slate-800" x-text="(entry.delivered * 25) + ' SAR'"></strong></div>
+                                <div class="flex justify-between text-emerald-600"><span>Paid Collected:</span> <span class="font-bold" x-text="entry.receivedCash + ' SAR'"></span></div>
+                                <div class="flex justify-between text-rose-600 font-black"><span>Outstanding Bal:</span> <span x-text="entry.pendingCash + ' SAR'"></span></div>
                             </div>
                         </div>
                     </template>
                 </div>
 
                 <div class="p-4 bg-slate-100 border-t border-slate-200 flex justify-between items-center text-xs font-bold">
-                    <span class="text-[10px] text-slate-400 uppercase tracking-wider">Accumulated Totals</span>
+                    <span class="text-[10px] text-slate-400 uppercase tracking-wider">Accumulated Balance Totals</span>
                     <div class="flex space-x-6 text-right">
                         <div><span class="text-[9px] block text-slate-400 uppercase">Total Lost Pots</span><span class="text-rose-600 font-black text-sm" x-text="modalTotalPendingPots + ' Pots'"></span></div>
                         <div><span class="text-[9px] block text-slate-400 uppercase">Gross Debt Due</span><span class="text-rose-600 font-black text-sm" x-text="modalTotalPendingCash + ' SAR'"></span></div>
@@ -345,7 +354,7 @@
             <div @click.away="showAddModal = false" class="bg-white rounded-2xl p-5 max-w-md w-full space-y-4 border border-slate-200">
                 <div class="flex justify-between items-center">
                     <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wide">Onboard New Hotel Pipeline</h3>
-                    <button @click="showAddModal = false" class="text-slate-400 text-xl font-bold">×</button>
+                    <button @click="showAddModal = false" class="text-slate-400 text-xl font-bold">&times;</button>
                 </div>
                 
                 <div class="space-y-3">
@@ -354,8 +363,8 @@
                         <input type="text" x-model="newHotelName" placeholder="e.g. Grand Al-Khobar Corporate Tower" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-bold text-xs text-slate-800 focus:outline-none focus:border-amber-900 transition-colors">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Initial Logistics Navigation Coordinates (Optional)</label>
-                        <textarea x-model="newHotelLocation" rows="2" placeholder="Paste structural maps URL marker link address" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-bold text-xs text-slate-800 focus:outline-none focus:border-amber-900 transition-colors resize-none"></textarea>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Initial Location Routing Navigation Coordinates (Optional)</label>
+                        <textarea x-model="newHotelLocation" rows="2" placeholder="Paste full share map link web URL map pointer" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-bold text-xs text-slate-800 focus:outline-none focus:border-amber-900 transition-colors resize-none"></textarea>
                     </div>
                 </div>
 
@@ -396,6 +405,7 @@
                 configKey: '',
                 cloudConnected: false,
                 supabaseClient: null,
+                dbErrorMessage: '',
 
                 hotels: [],
                 deliveryLogs: {},
@@ -416,18 +426,19 @@
                 saveDatabaseConfiguration() {
                     let cleanUrl = this.configUrl.replace(/\s+/g, '').trim();
                     let cleanKey = this.configKey.replace(/\s+/g, '').trim();
+                    this.dbErrorMessage = '';
 
                     if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
                         cleanUrl = 'https://' + cleanUrl;
                     }
 
                     if (!cleanUrl.includes('.supabase.co')) {
-                        alert("❌ Invalid URL. Ensure it matches your-id.supabase.co from Supabase Dashboard.");
+                        this.dbErrorMessage = "❌ Invalid endpoint structure. Match your-id.supabase.co format.";
                         return;
                     }
 
                     if (cleanKey.length < 40) {
-                        alert("❌ Invalid Key. Ensure you copied the entire long public anon key string.");
+                        this.dbErrorMessage = "❌ The string length is too brief to be a valid public anon key.";
                         return;
                     }
 
@@ -441,7 +452,7 @@
                 },
 
                 clearConfiguration() {
-                    if(confirm("Wipe configuration credentials to link another system pool?")) {
+                    if(confirm("Wipe configuration parameters to link another central data cluster?")) {
                         localStorage.removeItem('hc_sb_url');
                         localStorage.removeItem('hc_sb_key');
                         location.reload();
@@ -450,9 +461,14 @@
 
                 async initializeSupabase() {
                     try {
-                        this.supabaseClient = supabase.createClient(this.configUrl.trim(), this.configKey.trim());
+                        if (!window.supabase) {
+                            setTimeout(() => this.initializeSupabase(), 300);
+                            return;
+                        }
+
+                        this.supabaseClient = window.supabase.createClient(this.configUrl.trim(), this.configKey.trim());
                         
-                        // Handshake Verification Test call
+                        // Verification Handshake Select Command Call
                         const { data, error } = await this.supabaseClient
                             .from('app_sync')
                             .select('id')
@@ -463,10 +479,19 @@
 
                         this.cloudConnected = true;
                         await this.forceCloudFetch();
+                        
+                        // Setup Realtime Connection Streaming Channel
                         this.listenToLiveChanges();
+
+                        // Resilient Background Backup Heartbeat Poll Loop Engine (Every 8 Seconds)
+                        setInterval(() => {
+                            this.forceCloudFetch();
+                        }, 8000);
+
                     } catch(e) {
                         this.cloudConnected = false;
-                        console.error("Database connection handshake failure:", e.message);
+                        this.dbErrorMessage = "❌ Sync Engine Failure: " + e.message;
+                        console.error("Database initialization fault tracking trace:", e);
                     }
                 },
 
@@ -486,6 +511,7 @@
                                 this.selectedHotelId = this.hotels[0].id;
                             }
                             this.loadDailyData();
+                            this.cloudConnected = true;
                         }
                     } catch (err) {
                         this.cloudConnected = false;
@@ -514,16 +540,20 @@
 
                 listenToLiveChanges() {
                     if(!this.supabaseClient) return;
-                    this.supabaseClient
-                        .channel('schema-db-realtime')
-                        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_sync', filter: 'id=eq.live_ledger' }, payload => {
-                            if(payload.new) {
-                                this.hotels = payload.new.hotels || [];
-                                this.deliveryLogs = payload.new.delivery_logs || {};
-                                this.loadDailyData();
-                            }
-                        })
-                        .subscribe();
+                    try {
+                        this.supabaseClient
+                            .channel('custom-schema-broadcast')
+                            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_sync', filter: 'id=eq.live_ledger' }, payload => {
+                                if(payload.new) {
+                                    this.hotels = payload.new.hotels || [];
+                                    this.deliveryLogs = payload.new.delivery_logs || {};
+                                    this.loadDailyData();
+                                }
+                            })
+                            .subscribe();
+                    } catch (err) {
+                        console.warn("Realtime channels not enabled or configured on dashboard. Falling back to background sync polling engine.");
+                    }
                 },
 
                 getSelectedHotel() {
@@ -649,7 +679,7 @@
                 },
 
                 removeHotel(id) {
-                    if (confirm("Remove this hotel pipeline from your permanent tracking files?")) {
+                    if (confirm("Permanently purge this client portfolio? This deletes historical references link data sets.")) {
                         this.hotels = this.hotels.filter(h => h.id !== id);
                         this.selectedHotelId = this.hotels.length > 0 ? this.hotels[0].id : '';
                         this.saveToStorageAndCloud();
@@ -717,7 +747,9 @@
                     }
 
                     setTimeout(() => {
-                        const ctx = document.getElementById('financeHubChart').getContext('2d');
+                        const canvasElement = document.getElementById('financeHubChart');
+                        if (!canvasElement) return;
+                        const ctx = canvasElement.getContext('2d');
                         if (this.financeChartInstance) this.financeChartInstance.destroy();
 
                         this.financeChartInstance = new Chart(ctx, {
@@ -725,7 +757,7 @@
                             data: {
                                 labels: chartLabels,
                                 datasets: [
-                                    { label: 'Gross Due Value', data: grossDataset, backgroundColor: '#78350f', borderRadius: 4 },
+                                    { label: 'Gross Statement Value', data: grossDataset, backgroundColor: '#78350f', borderRadius: 4 },
                                     { label: 'Revenue Collected', data: collectedDataset, backgroundColor: '#059669', borderRadius: 4 }
                                 ]
                             },
