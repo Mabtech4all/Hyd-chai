@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hyderabad Chai - Premium Mobile Ledger Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        [x-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body x-data="appState()" x-init="initApp()" class="text-slate-900 antialiased select-none">
+
+    <div class="min-h-screen flex flex-col pb-20 md:pb-0">
+        
+        <header class="bg-amber-950 text-white shadow-md sticky top-0 z-40 px-4 py-3.5 border-b border-amber-900/40">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <button @click="isSidebarOpen = true" class="p-2 -ml-2 bg-amber-900/40 rounded-xl hover:bg-amber-900/80 transition-all" title="Open Hotel Menu">
+                        <span class="text-lg block">📋</span>
+                    </button>
+                    <div>
+                        <h1 class="text-base font-extrabold tracking-tight">HYDERABAD CHAI</h1>
+                        <p class="text-[10px] text-amber-300/80 font-medium uppercase tracking-widest" x-text="currentTab === 'delivery' ? 'Daily Ledger' : 'Financial Hub'"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button @click="currentTab = 'delivery'" :class="currentTab === 'delivery' ? 'bg-amber-700 text-white shadow-xs' : 'text-amber-200 hover:text-white'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                        Ledger
+                    </button>
+                    <button @click="currentTab = 'finance'; refreshFinanceMetrics();" :class="currentTab === 'finance' ? 'bg-amber-700 text-white shadow-xs' : 'text-amber-200 hover:text-white'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                        Earnings
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 max-w-7xl w-full mx-auto flex relative">
+            
+            <aside :class="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:z-10 md:w-64 md:shadow-none md:h-[calc(100vh-65px)]">
+                <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                    <div>
+                        <h2 class="font-extrabold text-xs text-slate-400 uppercase tracking-wider">Hotel Categories</h2>
+                        <p class="text-xs font-bold text-slate-700" x-text="hotels.length + ' Registered Pipelines'"></p>
+                    </div>
+                    <button @click="isSidebarOpen = false" class="md:hidden p-2 text-slate-400 hover:text-slate-600 text-xl font-bold">×</button>
+                </div>
+
+                <div class="p-3 border-b border-slate-100 bg-amber-50/30">
+                    <button @click="showAddModal = true" class="w-full bg-amber-900 hover:bg-amber-950 text-white text-xs font-bold p-2.5 rounded-xl transition-all flex items-center justify-center space-x-2 shadow-xs">
+                        <span>➕ Onboard New Hotel</span>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                    <template x-for="hotel in hotels" :key="hotel.id">
+                        <button @click="selectedHotelId = hotel.id; isSidebarOpen = false" :class="selectedHotelId === hotel.id ? 'bg-amber-50 border-amber-200 text-amber-950 shadow-xs' : 'border-transparent text-slate-600 hover:bg-slate-50'" class="w-full text-left p-3 rounded-xl border flex items-center justify-between transition-all group">
+                            <div class="flex items-center space-x-3 overflow-hidden">
+                                <div :class="selectedHotelId === hotel.id ? 'bg-amber-900 text-white' : 'bg-slate-100 text-slate-500'" class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center shrink-0" x-text="hotel.name.charAt(0)"></div>
+                                <span :class="getLog(hotel.id).remarks === 'No Longer Needed' ? 'line-through text-slate-400 font-normal' : 'font-semibold'" class="text-xs truncate" x-text="hotel.name"></span>
+                            </div>
+                            <div class="flex items-center space-x-1 shrink-0">
+                                <span class="text-xs" x-show="getLog(hotel.id).remarks === 'Holiday'" title="Holiday status active">🏖️</span>
+                                <span class="text-[10px] bg-rose-100 text-rose-700 font-extrabold px-1.5 py-0.5 rounded-sm" x-show="getLog(hotel.id).pendingCash > 0" x-text="getLog(hotel.id).pendingCash"></span>
+                            </div>
+                        </button>
+                    </template>
+                </div>
+
+                <div class="p-3 border-t border-slate-100 bg-slate-50 text-center">
+                    <button @click="clearAllDataData()" class="text-[10px] text-rose-500 hover:text-rose-700 font-bold tracking-wide uppercase">⚠️ Wipe Client Storage</button>
+                </div>
+            </aside>
+
+            <div x-show="isSidebarOpen" @click="isSidebarOpen = false" x-cloak class="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden" x-transition></div>
+
+            <main class="flex-1 p-4 overflow-x-hidden min-h-0">
+                
+                <div x-show="currentTab === 'delivery'" class="space-y-4">
+                    <div class="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-200/60 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xl">📅</span>
+                            <div>
+                                <label class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Active Statement Date</label>
+                                <input type="date" x-model="selectedDate" @change="loadDailyData()" class="text-sm font-bold text-slate-800 border-none bg-transparent p-0 focus:ring-0 cursor-pointer">
+                            </div>
+                        </div>
+                        <button @click="isSidebarOpen = true" class="md:hidden bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3 py-1.5 rounded-lg transition-all">
+                            Switch Hotel 🏢
+                        </button>
+                    </div>
+
+                    <template x-if="getSelectedHotel()">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden flex flex-col">
+                            <div class="p-4 bg-gradient-to-r from-amber-900 to-amber-950 text-white flex justify-between items-center">
+                                <div>
+                                    <h3 class="font-bold text-sm tracking-wide" x-text="getSelectedHotel().name"></h3>
+                                    <p class="text-[10px] text-amber-200 font-semibold">Standard Rate: 25 SAR / Pot</p>
+                                </div>
+                                <button @click="removeHotel(selectedHotelId)" class="text-amber-300 hover:text-rose-300 text-[10px] font-bold bg-amber-900/60 px-2.5 py-1 rounded-lg transition-colors">
+                                    Remove Hotel
+                                </button>
+                            </div>
+
+                            <div x-show="getLog(selectedHotelId).remarks !== ''" class="border-b border-slate-100 bg-slate-50/50" x-data="{ expanded: false }" x-transition>
+                                <button @click="expanded = !expanded" class="w-full px-4 py-2.5 flex items-center justify-between font-bold text-[11px] text-slate-500 tracking-wider uppercase hover:bg-slate-100 transition-colors">
+                                    <div class="flex items-center space-x-2">
+                                        <span>📍 Logistics Routing Address</span>
+                                        <template x-if="getSelectedHotel().location">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        </template>
+                                    </div>
+                                    <span x-text="expanded ? 'Hide Panel ▲' : 'Expand Panel ▼'"></span>
+                                </button>
+                                
+                                <div x-show="expanded" x-transition class="p-4 pt-0 space-y-2">
+                                    <template x-if="getSelectedHotel().location">
+                                        <div class="space-y-2">
+                                            <div class="p-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-medium break-all" x-text="getSelectedHotel().location"></div>
+                                            <button @click="launchGoogleMaps(getSelectedHotel().location)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs p-2.5 rounded-xl transition-colors flex items-center justify-center space-x-2 shadow-xs">
+                                                <span>🗺️ Launch Google Maps Navigation</span>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="!getSelectedHotel().location">
+                                        <p class="text-[11px] text-slate-400 font-medium py-2 italic text-center">No structural location registered for this property pipeline profile.</p>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div class="p-4 space-y-4 text-xs">
+                                <div class="grid grid-cols-2 gap-3 bg-amber-50/30 p-3 rounded-xl border border-amber-100/60">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-amber-950 mb-1">Delivered Pots (AM)</label>
+                                        <input type="number" min="0" x-model.number="getLog(selectedHotelId).delivered" @input="calculateAndSave(selectedHotelId)" class="w-full bg-white border border-slate-200 rounded-lg p-2 font-bold text-sm text-slate-800 focus:outline-none focus:border-amber-700">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-amber-950 mb-1">Delivered Cost</label>
+                                        <div class="p-2 font-black text-sm text-slate-800 bg-white border border-transparent rounded-lg mt-0.5" x-text="((getLog(selectedHotelId).delivered || 0) * 25) + ' SAR'"></div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Returned Empty Today</label>
+                                        <input type="number" min="0" x-model.number="getLog(selectedHotelId).returned" @input="calculateAndSave(selectedHotelId)" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold text-slate-800 focus:outline-none focus:border-amber-700">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Total Pending Pots</label>
+                                        <div class="p-2 font-black text-sm rounded-lg border border-slate-100 bg-slate-50/50" :class="getLog(selectedHotelId).pendingThermos > 0 ? 'text-rose-600' : 'text-emerald-700'" x-text="getLog(selectedHotelId).pendingThermos"></div>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 bg-slate-50/80 rounded-xl space-y-2 border border-slate-100">
+                                    <label class="flex items-center space-x-2 font-semibold text-slate-700 cursor-pointer">
+                                        <input type="checkbox" x-model="getLog(selectedHotelId).afternoonRequired" @change="saveToStorage()" class="rounded text-amber-800 focus:ring-amber-700 w-4 h-4">
+                                        <span>PM Delivery Required</span>
+                                    </label>
+                                    <div x-show="getLog(selectedHotelId).afternoonRequired" x-transition>
+                                        <label class="block text-[10px] font-medium text-slate-400 mb-1">Target Quantity (PM)</label>
+                                        <input type="number" min="0" x-model.number="getLog(selectedHotelId).afternoonQty" @input="saveToStorage()" class="w-full bg-white border border-slate-200 rounded-lg p-2 font-bold text-slate-800 focus:outline-none">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-1">Operational Remarks</label>
+                                    <select x-model="getLog(selectedHotelId).remarks" @change="saveToStorage()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-semibold text-slate-700 focus:outline-none">
+                                        <option value="">Standard Operations</option>
+                                        <option value="Holiday">Holiday (Closed)</option>
+                                        <option value="No Longer Needed">No Longer Needed</option>
+                                        <option value="Not Needed">Not Needed Today</option>
+                                        <option value="Required Afternoon">Urgent PM Needed</option>
+                                    </select>
+                                </div>
+
+                                <div @click="openLedgerModal(getSelectedHotel())" class="bg-emerald-50/30 p-3.5 rounded-xl border border-emerald-100 flex flex-col space-y-3 cursor-pointer hover:bg-emerald-50/60 transition-colors group">
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-emerald-950 mb-1" @click.stop>Amount Collected Today</label>
+                                            <input type="number" min="0" x-model.number="getLog(selectedHotelId).receivedCash" @input="calculateAndSave(selectedHotelId)" @click.stop class="w-full bg-white border border-slate-200 rounded-lg p-2 font-bold text-slate-800 focus:outline-none focus:border-emerald-600" placeholder="SAR">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-emerald-950 mb-1 flex justify-between items-center">
+                                                <span>Total Pending Cash</span>
+                                            </label>
+                                            <div class="p-2 font-black text-sm bg-white border border-transparent rounded-lg mt-0.5" :class="getLog(selectedHotelId).pendingCash > 0 ? 'text-rose-600' : 'text-emerald-800'" x-text="getLog(selectedHotelId).pendingCash + ' SAR'"></div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center text-[10px] font-bold bg-emerald-700 text-white p-2 rounded-lg group-hover:bg-emerald-800 transition-colors">
+                                        🔍 Click to View Complete Date History Statement & Status Lifecycle Logs
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-if="!getSelectedHotel()">
+                        <div class="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 p-6">
+                            <span class="text-4xl block mb-2">🏢</span>
+                            <h3 class="text-sm font-bold text-slate-700">No Hotel Selected</h3>
+                            <p class="text-slate-400 text-xs mt-0.5">Please swipe open or tap the menu bar to select an active client card.</p>
+                            <button @click="isSidebarOpen = true" class="mt-4 bg-amber-900 text-white text-xs font-bold px-4 py-2 rounded-xl">View Hotel List</button>
+                        </div>
+                    </template>
+                </div>
+
+                <div x-show="currentTab === 'finance'" class="space-y-4">
+                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/60 space-y-3">
+                        <h2 class="font-extrabold text-sm text-slate-800">Advanced Earnings Hub</h2>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Scope Engine</label>
+                                <select x-model="financeHotelFilter" @change="refreshFinanceMetrics()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-semibold">
+                                    <option value="all">All Combined Hotels</option>
+                                    <template x-for="hotel in hotels" :key="hotel.id">
+                                        <option :value="hotel.id" x-text="hotel.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Time Horizon Window</label>
+                                <div class="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl font-bold text-center text-slate-600">
+                                    <div @click="financePeriod = 'day'; refreshFinanceMetrics()" :class="financePeriod === 'day' ? 'bg-white text-slate-900 shadow-xs' : 'cursor-pointer'" class="p-1.5 rounded-lg text-[10px]">Day</div>
+                                    <div @click="financePeriod = 'week'; refreshFinanceMetrics()" :class="financePeriod === 'week' ? 'bg-white text-slate-900 shadow-xs' : 'cursor-pointer'" class="p-1.5 rounded-lg text-[10px]">Week</div>
+                                    <div @click="financePeriod = 'month'; refreshFinanceMetrics()" :class="financePeriod === 'month' ? 'bg-white text-slate-900 shadow-xs' : 'cursor-pointer'" class="p-1.5 rounded-lg text-[10px]">Month</div>
+                                    <div @click="financePeriod = 'year'; refreshFinanceMetrics()" :class="financePeriod === 'year' ? 'bg-white text-slate-900 shadow-xs' : 'cursor-pointer'" class="p-1.5 rounded-lg text-[10px]">Year</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-white border border-slate-200 p-3 rounded-xl">
+                            <span class="text-[9px] block font-bold text-slate-400 uppercase tracking-wider">Gross Earned</span>
+                            <span class="text-sm font-black text-amber-900 block mt-0.5" x-text="financeGrossEarned + ' SAR'"></span>
+                        </div>
+                        <div class="bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl">
+                            <span class="text-[9px] block font-bold text-emerald-800 uppercase tracking-wider">Collected</span>
+                            <span class="text-sm font-black text-emerald-700 block mt-0.5" x-text="financeCollected + ' SAR'"></span>
+                        </div>
+                        <div class="bg-rose-50/50 border border-rose-100 p-3 rounded-xl">
+                            <span class="text-[9px] block font-bold text-rose-800 uppercase tracking-wider">Pending</span>
+                            <span class="text-sm font-black text-rose-600 block mt-0.5" x-text="financePending + ' SAR'"></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/60">
+                        <div class="relative w-full h-64">
+                            <canvas id="financeHubChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <div x-show="showLedgerModal" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 transition-all" x-transition>
+            <div @click.away="showLedgerModal = false" class="bg-white rounded-t-2xl sm:rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+                
+                <div class="p-4 bg-amber-950 text-white flex justify-between items-center">
+                    <div>
+                        <h3 class="text-sm font-bold tracking-wide" x-text="selectedHotelForLedger ? selectedHotelForLedger.name : ''"></h3>
+                        <p class="text-[10px] text-amber-300 font-semibold">Ledger Statement Tracking History List</p>
+                    </div>
+                    <button @click="showLedgerModal = false" class="text-amber-200 hover:text-white text-xl font-bold p-1">×</button>
+                </div>
+
+                <div class="p-3 overflow-y-auto flex-1 bg-slate-50 space-y-3 custom-scrollbar">
+                    <template x-if="modalLedgerEntries.length === 0">
+                        <div class="text-center py-10 text-slate-400 bg-white rounded-xl p-4 border border-slate-200/60">
+                            <span class="text-2xl block mb-1">🎉</span>
+                            <h4 class="font-bold text-slate-700 text-xs">Account Balance Clear</h4>
+                            <p class="text-[10px] mt-0.5">No outstanding balances or missing items currently found.</p>
+                        </div>
+                    </template>
+
+                    <template x-if="modalLedgerEntries.length > 0">
+                        <div class="space-y-2">
+                            <template x-for="entry in modalLedgerEntries" :key="entry.date">
+                                <div class="p-3 rounded-xl border shadow-xs text-xs flex flex-col space-y-2" 
+                                     :class="entry.auditStatus === 'paused' ? 'bg-rose-50/70 border-rose-200' : (entry.auditStatus === 'resumed' ? 'bg-emerald-50/70 border-emerald-200' : (entry.date === selectedDate ? 'border-amber-500 bg-amber-50/20' : 'bg-white border-slate-200/80'))">
+                                    
+                                    <div class="flex justify-between items-center border-b border-slate-100 pb-1.5 font-bold text-slate-700">
+                                        <span :class="entry.auditStatus === 'paused' ? 'text-rose-600 font-black' : (entry.auditStatus === 'resumed' ? 'text-emerald-700 font-black' : 'text-slate-900 font-black')" x-text="formatDisplayDate(entry.date)"></span>
+                                        
+                                        <div class="flex space-x-1">
+                                            <template x-if="entry.auditStatus === 'paused'">
+                                                <span class="bg-rose-600 text-white text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wide">⏸️ No Longer Needed From This Date</span>
+                                            </template>
+                                            <template x-if="entry.auditStatus === 'resumed'">
+                                                <span class="bg-emerald-600 text-white text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wide">▶️ Started Again From This Date</span>
+                                            </template>
+                                            <template x-if="entry.remarks && entry.auditStatus === 'normal'">
+                                                <span class="bg-slate-200 text-slate-700 text-[9px] px-1.5 py-0.5 rounded-sm font-medium" x-text="entry.remarks"></span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-500 font-medium">
+                                        <div class="flex justify-between"><span>Delivered Pots:</span> <strong class="text-slate-800" x-text="entry.delivered"></strong></div>
+                                        <div class="flex justify-between"><span>Returned Empty:</span> <strong class="text-slate-800" x-text="entry.returned"></strong></div>
+                                        <div class="flex justify-between text-rose-700 font-bold"><span>Missing Thermos:</span> <span x-text="entry.pendingThermos"></span></div>
+                                        <div class="flex justify-between"><span>Gross Cost:</span> <strong class="text-slate-800" x-text="(entry.delivered * 25) + ' SAR'"></strong></div>
+                                        <div class="flex justify-between text-emerald-800"><span>Paid Value:</span> <span x-text="entry.receivedCash + ' SAR'"></span></div>
+                                        <div class="flex justify-between text-rose-700 font-black bg-rose-50 px-1 rounded-sm"><span>Pending Due:</span> <span x-text="entry.pendingCash + ' SAR'"></span></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="p-3 bg-slate-100 border-t border-slate-200 flex justify-between items-center text-xs">
+                    <span class="text-[10px] text-slate-400 font-semibold uppercase">History Snapshot</span>
+                    <div class="flex space-x-4 font-black text-right">
+                        <div>
+                            <span class="text-[9px] block font-bold text-slate-400">Total Lost Pots</span>
+                            <span class="text-rose-600" x-text="modalTotalPendingPots + ' Pots'"></span>
+                        </div>
+                        <div>
+                            <span class="text-[9px] block font-bold text-slate-400">Gross Debt Due</span>
+                            <span class="text-rose-600" x-text="modalTotalPendingCash + ' SAR'"></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div x-show="showAddModal" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 shadow-2xl animate-fade-in" x-transition>
+            <div @click.away="showAddModal = false" class="bg-white rounded-2xl p-5 max-w-md w-full space-y-4 border border-slate-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-extrabold text-slate-900">Onboard New Hotel Profile</h3>
+                    <button @click="showAddModal = false" class="text-slate-400 text-xl font-bold">×</button>
+                </div>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Hotel Identity Name</label>
+                        <input type="text" x-model="newHotelName" placeholder="e.g. Grand Al-Khobar Palace" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold text-xs text-slate-800 focus:outline-none focus:border-amber-700">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Google Maps Link or Address (Optional)</label>
+                        <textarea x-model="newHotelLocation" rows="2" placeholder="Paste address coordinates or URL map marker links here" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold text-xs text-slate-800 focus:outline-none focus:border-amber-700 resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex space-x-2 pt-2 text-xs font-bold">
+                    <button @click="showAddModal = false; newHotelName=''; newHotelLocation='';" class="flex-1 bg-slate-100 text-slate-600 p-2.5 rounded-xl hover:bg-slate-200 transition-all">Cancel</button>
+                    <button @click="addHotel()" class="flex-1 bg-amber-900 text-white p-2.5 rounded-xl hover:bg-amber-950 transition-all">Onboard Fleet</button>
+                </div>
+            </div>
+        </div>
+
+        <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-lg px-6 py-2 flex justify-around items-center z-40 text-slate-500">
+            <button @click="currentTab = 'delivery'" :class="currentTab === 'delivery' ? 'text-amber-900' : ''" class="flex flex-col items-center space-y-0.5">
+                <span class="text-lg">📋</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider">Ledger Logs</span>
+            </button>
+            <button @click="isSidebarOpen = true" class="flex flex-col items-center space-y-0.5 bg-amber-900 text-white p-2.5 rounded-full -mt-6 shadow-md border-4 border-white active:scale-95 transition-transform">
+                <span class="text-sm">🏢</span>
+            </button>
+            <button @click="currentTab = 'finance'; refreshFinanceMetrics();" :class="currentTab === 'finance' ? 'text-amber-900' : ''" class="flex flex-col items-center space-y-0.5">
+                <span class="text-lg">📊</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider">Earnings Hub</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <script>
+        function appState() {
+            return {
+                // UI Controls
+                currentTab: 'delivery',
+                selectedDate: new Date().toISOString().split('T')[0],
+                isSidebarOpen: false,
+                showAddModal: false,
+                newHotelName: '',
+                newHotelLocation: '',
+
+                // Active Target Strategy Selection
+                selectedHotelId: 'h1',
+
+                // Popup Statement Storage
+                showLedgerModal: false,
+                selectedHotelForLedger: null,
+                modalLedgerEntries: [],
+                modalTotalPendingCash: 0,
+                modalTotalPendingPots: 0,
+
+                // Finance Dashboard Advanced Metrics Parameters
+                financeHotelFilter: 'all',
+                financePeriod: 'week',
+                financeGrossEarned: 0,
+                financeCollected: 0,
+                financePending: 0,
+                financeChartInstance: null,
+
+                // Client Database Data Repositories
+                hotels: [],
+                deliveryLogs: {},
+
+                initApp() {
+                    this.loadFromStorage();
+                    
+                    if (this.hotels.length === 0 && Object.keys(this.deliveryLogs).length === 0) {
+                        this.hotels = [
+                            { id: 'h1', name: 'The Park Luxury Hotel', location: 'Dammam, Eastern Province, Saudi Arabia', addedOn: '2026-05-25' },
+                            { id: 'h2', name: 'Grand Plaza Tower', location: 'Al Khobar, Eastern Province', addedOn: '2026-05-25' },
+                            { id: 'h3', name: 'Oasis Lounge & Suites', location: 'Dammam Corniche Street', addedOn: '2026-05-26' },
+                            { id: 'h4', name: 'City Core Boulevard Inn', location: 'King Fahd Road, Al Khobar', addedOn: '2026-05-26' }
+                        ];
+                        this.generateSecureMockHistory();
+                        this.saveToStorage();
+                    }
+                    
+                    if(this.hotels.length > 0) {
+                        this.selectedHotelId = this.hotels[0].id;
+                    }
+                    this.loadDailyData();
+                },
+
+                saveToStorage() {
+                    localStorage.setItem('hc_premium_hotels_db', JSON.stringify(this.hotels));
+                    localStorage.setItem('hc_premium_ledger_db', JSON.stringify(this.deliveryLogs));
+                },
+
+                loadFromStorage() {
+                    const h = localStorage.getItem('hc_premium_hotels_db');
+                    const l = localStorage.getItem('hc_premium_ledger_db');
+                    if (h) this.hotels = JSON.parse(h);
+                    if (l) this.deliveryLogs = JSON.parse(l);
+                },
+
+                getSelectedHotel() {
+                    return this.hotels.find(h => h.id === this.selectedHotelId) || null;
+                },
+
+                calculateAndSave(hotelId) {
+                    this.calculateLog(hotelId);
+                    this.saveToStorage();
+                },
+
+                calculateLog(hotelId) {
+                    const key = this.selectedDate + '_' + hotelId;
+                    let log = this.getLog(hotelId);
+
+                    let prevDate = new Date(this.selectedDate);
+                    prevDate.setDate(prevDate.getDate() - 1);
+                    let prevKey = prevDate.toISOString().split('T')[0] + '_' + hotelId;
+                    
+                    let carryCash = 0;
+                    let carryThermos = 0;
+                    if (this.deliveryLogs[prevKey]) {
+                        carryCash = Math.max(0, Number(this.deliveryLogs[prevKey].pendingCash) || 0);
+                        carryThermos = Math.max(0, Number(this.deliveryLogs[prevKey].pendingThermos) || 0);
+                    }
+
+                    log.pendingThermos = Math.max(0, carryThermos + (Number(log.delivered) || 0) - (Number(log.returned) || 0));
+                    
+                    let totalValueOwed = carryCash + ((Number(log.delivered) || 0) * 25);
+                    log.pendingCash = Math.max(0, totalValueOwed - (Number(log.receivedCash) || 0));
+                },
+
+                getLog(hotelId) {
+                    const key = this.selectedDate + '_' + hotelId;
+                    if (!this.deliveryLogs[key]) {
+                        let prevDate = new Date(this.selectedDate);
+                        prevDate.setDate(prevDate.getDate() - 1);
+                        let prevKey = prevDate.toISOString().split('T')[0] + '_' + hotelId;
+                        
+                        let carryCash = 0;
+                        let carryThermos = 0;
+                        
+                        if (this.deliveryLogs[prevKey]) {
+                            carryCash = Math.max(0, Number(this.deliveryLogs[prevKey].pendingCash) || 0);
+                            carryThermos = Math.max(0, Number(this.deliveryLogs[prevKey].pendingThermos) || 0);
+                        }
+
+                        this.deliveryLogs[key] = {
+                            delivered: 0,
+                            returned: 0,
+                            pendingThermos: carryThermos,
+                            afternoonRequired: false,
+                            afternoonQty: 0,
+                            remarks: '',
+                            receivedCash: 0,
+                            pendingCash: carryCash
+                        };
+                    }
+                    return this.deliveryLogs[key];
+                },
+
+                loadDailyData() {
+                    this.hotels.forEach(h => this.calculateLog(h.id));
+                },
+
+                // LIFECYCLE AUDITING STATEMENT ENGINE
+                openLedgerModal(hotel) {
+                    this.selectedHotelForLedger = hotel;
+                    let temporaryList = [];
+
+                    // 1. Gather all historical records for this client pipeline
+                    Object.keys(this.deliveryLogs).forEach(key => {
+                        if (key.endsWith('_' + hotel.id)) {
+                            let dateStr = key.split('_')[0];
+                            let data = this.deliveryLogs[key];
+
+                            temporaryList.push({
+                                date: dateStr,
+                                delivered: data.delivered || 0,
+                                returned: data.returned || 0,
+                                pendingThermos: Math.max(0, data.pendingThermos || 0),
+                                receivedCash: data.receivedCash || 0,
+                                pendingCash: Math.max(0, data.pendingCash || 0),
+                                remarks: data.remarks || '',
+                                auditStatus: 'normal'
+                            });
+                        }
+                    });
+
+                    // 2. Sort chronologically ascending to follow correct logical pipeline transitions
+                    temporaryList.sort((a, b) => a.date.localeCompare(b.date));
+
+                    // 3. Process status shifts ("No Longer Needed" boundary tracking)
+                    let wasNoLongerNeeded = false;
+                    for (let i = 0; i < temporaryList.length; i++) {
+                        let currentEntry = temporaryList[i];
+                        if (currentEntry.remarks === 'No Longer Needed') {
+                            if (!wasNoLongerNeeded) {
+                                currentEntry.auditStatus = 'paused'; // First entry of state shift
+                                wasNoLongerNeeded = true;
+                            }
+                        } else {
+                            if (wasNoLongerNeeded) {
+                                currentEntry.auditStatus = 'resumed'; // Shift back from paused state
+                                wasNoLongerNeeded = false;
+                            }
+                        }
+                    }
+
+                    // 4. Reverse to reverse-chronological array display order for easy reading
+                    this.modalLedgerEntries = temporaryList.sort((a, b) => b.date.localeCompare(a.date));
+                    
+                    let currentActiveState = this.getLog(hotel.id);
+                    this.modalTotalPendingCash = Math.max(0, currentActiveState.pendingCash);
+                    this.modalTotalPendingPots = Math.max(0, currentActiveState.pendingThermos);
+
+                    this.showLedgerModal = true;
+                },
+
+                formatDisplayDate(dString) {
+                    return new Date(dString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                },
+
+                launchGoogleMaps(locationString) {
+                    if (!locationString.trim()) return;
+                    let targetUrl = "";
+                    if(locationString.startsWith("http://") || locationString.startsWith("https://")) {
+                        targetUrl = locationString;
+                    } else {
+                        targetUrl = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(locationString);
+                    }
+                    window.open(targetUrl, '_blank');
+                },
+
+                addHotel() {
+                    if (!this.newHotelName.trim()) return;
+                    const cleanId = 'h_' + Date.now();
+                    
+                    this.hotels.push({
+                        id: cleanId,
+                        name: this.newHotelName.trim(),
+                        location: this.newHotelLocation.trim(),
+                        addedOn: new Date().toISOString().split('T')[0]
+                    });
+                    
+                    this.selectedHotelId = cleanId;
+                    this.newHotelName = '';
+                    this.newHotelLocation = '';
+                    this.showAddModal = false;
+                    this.saveToStorage();
+                    this.loadDailyData();
+                },
+
+                removeHotel(id) {
+                    if (confirm("Remove this hotel profile pipeline permanently from active tracking rows?")) {
+                        this.hotels = this.hotels.filter(h => h.id !== id);
+                        if(this.hotels.length > 0) this.selectedHotelId = this.hotels[0].id;
+                        else this.selectedHotelId = null;
+                        this.saveToStorage();
+                    }
+                },
+
+                clearAllDataData() {
+                    if (confirm("🚨 FACTORY WIPE CLEAN ALL DATA ENGINE LOGS?")) {
+                        localStorage.clear();
+                        location.reload();
+                    }
+                },
+
+                refreshFinanceMetrics() {
+                    let targetDates = [];
+                    let today = new Date();
+                    let iterations = 7;
+
+                    if (this.financePeriod === 'day') iterations = 1;
+                    else if (this.financePeriod === 'week') iterations = 7;
+                    else if (this.financePeriod === 'month') iterations = 30;
+                    else if (this.financePeriod === 'year') iterations = 12;
+
+                    this.financeGrossEarned = 0;
+                    this.financeCollected = 0;
+                    this.financePending = 0;
+
+                    let chartLabels = [];
+                    let grossDataset = [];
+                    let collectedDataset = [];
+
+                    if (this.financePeriod !== 'year') {
+                        for (let i = iterations - 1; i >= 0; i--) {
+                            let d = new Date();
+                            d.setDate(today.getDate() - i);
+                            let ISOString = d.toISOString().split('T')[0];
+                            targetDates.push(ISOString);
+                            chartLabels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                        }
+
+                        targetDates.forEach(dStr => {
+                            let dayGross = 0, dayCollected = 0, dayPending = 0;
+                            this.hotels.forEach(h => {
+                                if (this.financeHotelFilter !== 'all' && h.id !== this.financeHotelFilter) return;
+                                const key = dStr + '_' + h.id;
+                                if (this.deliveryLogs[key]) {
+                                    let log = this.deliveryLogs[key];
+                                    dayGross += (log.delivered || 0) * 25;
+                                    dayCollected += log.receivedCash || 0;
+                                    dayPending += Math.max(0, log.pendingCash || 0);
+                                }
+                            });
+                            this.financeGrossEarned += dayGross;
+                            this.financeCollected += dayCollected;
+                            this.financePending += dayPending;
+
+                            grossDataset.push(dayGross);
+                            collectedDataset.push(dayCollected);
+                        });
+                    } else {
+                        for (let i = 11; i >= 0; i--) {
+                            let d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                            chartLabels.push(d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+                            
+                            let monthGross = 0, monthCollected = 0, monthPending = 0;
+                            Object.keys(this.deliveryLogs).forEach(key => {
+                                let parts = key.split('_');
+                                let logDate = new Date(parts[0]);
+                                let hId = parts[1];
+
+                                if (this.financeHotelFilter !== 'all' && hId !== this.financeHotelFilter) return;
+
+                                if (logDate.getFullYear() === d.getFullYear() && logDate.getMonth() === d.getMonth()) {
+                                    let log = this.deliveryLogs[key];
+                                    monthGross += (log.delivered || 0) * 25;
+                                    monthCollected += log.receivedCash || 0;
+                                    monthPending += Math.max(0, monthPending || 0);
+                                }
+                            });
+
+                            this.financeGrossEarned += monthGross;
+                            this.financeCollected += monthCollected;
+                            this.financePending += monthPending;
+
+                            grossDataset.push(monthGross);
+                            collectedDataset.push(monthCollected);
+                        }
+                    }
+
+                    setTimeout(() => {
+                        const ctx = document.getElementById('financeHubChart').getContext('2d');
+                        if (this.financeChartInstance) this.financeChartInstance.destroy();
+
+                        this.financeChartInstance = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: chartLabels,
+                                datasets: [
+                                    { label: 'Gross Value Owed', data: grossDataset, backgroundColor: '#78350f', borderRadius: 4 },
+                                    { label: 'Revenue Collected', data: collectedDataset, backgroundColor: '#059669', borderRadius: 4 }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10, family: 'Plus Jakarta Sans', weight: 'bold' } } } },
+                                scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
+                            }
+                        });
+                    }, 50);
+                },
+
+                generateSecureMockHistory() {
+                    const days = [];
+                    for (let i = 12; i >= 0; i--) {
+                        let d = new Date();
+                        d.setDate(d.getDate() - i);
+                        days.push(d.toISOString().split('T')[0]);
+                    }
+
+                    days.forEach((dayStr, index) => {
+                        this.hotels.forEach(h => {
+                            const key = dayStr + '_' + h.id;
+                            let del = Math.floor(Math.random() * 4) + 1;
+                            let ret = del;
+                            let remarks = '';
+                            
+                            if (h.id === 'h2' && (index === 4 || index === 5 || index === 6)) {
+                                del = 0;
+                                ret = 0;
+                                remarks = 'No Longer Needed';
+                            } else if (h.id === 'h4' && index === 2) {
+                                del = 0;
+                                ret = 0;
+                                remarks = 'Holiday';
+                            }
+
+                            let generatedCost = del * 25;
+                            this.deliveryLogs[key] = {
+                                delivered: del,
+                                returned: ret,
+                                pendingThermos: 0,
+                                afternoonRequired: false,
+                                afternoonQty: 0,
+                                remarks: remarks,
+                                receivedCash: generatedCost,
+                                pendingCash: 0
+                            };
+                        });
+                    });
+                }
+            };
+        }
+    </script>
+</body>
+</html>
